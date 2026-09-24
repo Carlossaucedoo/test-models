@@ -134,3 +134,15 @@ test('las funciones protegidas responden 401 con credenciales incorrectas', func
     ['PATCH', '/api/users/password'],
     ['DELETE', '/api/users'],
 ]);
+
+test('las funciones con credenciales bloquean tras 10 intentos por minuto', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 10) as $attempt) {
+        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'incorrecta'])
+            ->assertUnauthorized();
+    }
+
+    $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertTooManyRequests();
+});

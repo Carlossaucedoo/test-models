@@ -42,6 +42,7 @@ Respuestas:
 - `200` / `201`: correcto.
 - `401`: email o contraseña incorrectos (mismo mensaje en ambos casos).
 - `422`: datos no válidos (por ejemplo, email repetido o contraseña de menos de 8 caracteres).
+- `429`: demasiados intentos. Las rutas con email y contraseña admiten 10 peticiones por minuto desde la misma IP.
 
 Envía siempre la cabecera `Accept: application/json`.
 
