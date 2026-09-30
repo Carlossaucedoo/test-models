@@ -18,9 +18,18 @@ composer install
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
-php artisan migrate
-php artisan db:seed   # opcional: crea el usuario test@example.com / password
+php artisan migrate --seed
 ```
+
+El seeder (`database/seeders/DatabaseSeeder.php`) crea 12 usuarios:
+
+| Username | Email              | Contraseña    |
+|----------|--------------------|---------------|
+| ana      | ana@example.com    | password123   |
+| luis     | luis@example.com   | password123   |
+| + 10 usuarios aleatorios (contraseña `password`) | | |
+
+Para vaciar la base de datos y volver a cargar los usuarios: `php artisan migrate:fresh --seed`.
 
 Si usas Herd y la carpeta está dentro de `~/Herd`, la API estará en `http://test-models.test/api`.
 Sin Herd, arranca el servidor con `php artisan serve` y usa `http://localhost:8000/api`.

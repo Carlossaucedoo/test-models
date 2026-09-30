@@ -146,3 +146,15 @@ test('las funciones con credenciales bloquean tras 10 intentos por minuto', func
     $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
         ->assertTooManyRequests();
 });
+
+test('el seeder crea al menos dos usuarios y se puede hacer login con ellos', function () {
+    $this->seed();
+
+    expect(User::count())->toBeGreaterThanOrEqual(2);
+
+    $this->postJson('/api/login', [
+        'email' => 'ana@example.com',
+        'password' => 'password123',
+    ])->assertOk()
+        ->assertJsonPath('username', 'ana');
+});
