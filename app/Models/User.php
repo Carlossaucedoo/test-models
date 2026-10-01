@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Model
 {
@@ -12,7 +13,7 @@ class User extends Model
     protected $table = 'users';
 
     protected $fillable = [
-        'username', 'email', 'password',
+        'name', 'email', 'password',
     ];
 
     protected $hidden = [
@@ -20,14 +21,10 @@ class User extends Model
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Tokens de sesión del usuario.
      */
-    protected function casts(): array
+    public function tokens(): HasMany
     {
-        return [
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Token::class);
     }
 }

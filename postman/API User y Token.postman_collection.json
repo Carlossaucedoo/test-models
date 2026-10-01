@@ -1,0 +1,373 @@
+{
+	"info": {
+		"name": "API User y Token",
+		"description": "API con los modelos User y Token: listar los 10 primeros usuarios, crear usuario con la contraseña hasheada, iniciar sesión (devuelve un token) y actualizar el name con el token.\n\nTodas las respuestas tienen la misma estructura: success, message, data y timestamp.\n\nEjecuta las peticiones en orden (Run collection): Login guarda el token en la variable {{token}} para Actualizar name.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"event": [
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Se ejecuta en todas las peticiones: comprueba la estructura común de la respuesta",
+					"pm.test('Respuesta con success, message, data y timestamp', () => {",
+					"    const json = pm.response.json();",
+					"    pm.expect(json).to.have.all.keys('success', 'message', 'data', 'timestamp');",
+					"    pm.expect(json.success).to.be.a('boolean');",
+					"    pm.expect(json.message).to.be.a('string');",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://test-models.test/api"
+		},
+		{
+			"key": "email",
+			"value": ""
+		},
+		{
+			"key": "password",
+			"value": "password123"
+		},
+		{
+			"key": "token",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "1. Crear usuario",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// Email distinto en cada ejecución para que no falle por email repetido",
+							"pm.collectionVariables.set('email', `alumno${Date.now()}@example.com`);"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status 201', () => pm.response.to.have.status(201));",
+							"pm.test('success es true', () => pm.expect(pm.response.json().success).to.eql(true));",
+							"pm.test('La contraseña no se devuelve', () => pm.expect(pm.response.json().data).to.not.have.property('password'));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/users",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Alumno ASIR\",\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "2. Crear usuario - datos no válidos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status 422', () => pm.response.to.have.status(422));",
+							"pm.test('success es false', () => pm.expect(pm.response.json().success).to.eql(false));",
+							"pm.test('data contiene los errores de cada campo', () => pm.expect(pm.response.json().data).to.have.all.keys('name', 'email', 'password'));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/users",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"ab\",\n    \"email\": \"no-es-un-email\",\n    \"password\": \"corta\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "3. Listar 10 primeros usuarios",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status 200', () => pm.response.to.have.status(200));",
+							"pm.test('success es true', () => pm.expect(pm.response.json().success).to.eql(true));",
+							"pm.test('Devuelve como máximo 10 usuarios', () => pm.expect(pm.response.json().data.length).to.be.at.most(10));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/users",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users"
+					]
+				}
+			}
+		},
+		{
+			"name": "4. Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status 200', () => pm.response.to.have.status(200));",
+							"pm.test('success es true', () => pm.expect(pm.response.json().success).to.eql(true));",
+							"const token = pm.response.json().data.token;",
+							"pm.test('Devuelve un token', () => pm.expect(token).to.be.a('string').and.have.lengthOf(60));",
+							"// Guarda el token para la petición Actualizar name",
+							"pm.collectionVariables.set('token', token);"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"login"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "5. Login - credenciales incorrectas",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status 401', () => pm.response.to.have.status(401));",
+							"pm.test('success es false', () => pm.expect(pm.response.json().success).to.eql(false));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"login"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"incorrecta\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "6. Actualizar name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status 200', () => pm.response.to.have.status(200));",
+							"pm.test('success es true', () => pm.expect(pm.response.json().success).to.eql(true));",
+							"pm.test('El name ha cambiado', () => pm.expect(pm.response.json().data.name).to.eql('Nombre Actualizado'));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/users/name",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"name"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"token\": \"{{token}}\",\n    \"name\": \"Nombre Actualizado\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "7. Actualizar name - token no válido",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status 401', () => pm.response.to.have.status(401));",
+							"pm.test('success es false', () => pm.expect(pm.response.json().success).to.eql(false));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/users/name",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"name"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"token\": \"token-inventado\",\n    \"name\": \"Otro Nombre\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		}
+	]
+}
