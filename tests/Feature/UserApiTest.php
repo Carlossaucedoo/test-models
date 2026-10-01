@@ -142,3 +142,15 @@ test('login bloquea tras 10 intentos por minuto', function () {
         ->assertJsonPath('success', false)
         ->assertJsonStructure(['success', 'message', 'data', 'timestamp']);
 });
+
+test('el seeder crea al menos dos usuarios y se puede hacer login con ellos', function () {
+    $this->seed();
+
+    expect(User::count())->toBeGreaterThanOrEqual(2);
+
+    $this->postJson('/api/login', [
+        'email' => 'ana@example.com',
+        'password' => 'password123',
+    ])->assertOk()
+        ->assertJsonPath('data.user.name', 'ana');
+});
